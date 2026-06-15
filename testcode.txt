@@ -1,0 +1,43 @@
+SELECT
+    date,
+    resource_id,
+
+    COALESCE(
+        MAX(CASE WHEN is_clock_in = 1 THEN start_time END),
+        ''
+    ) AS clock_in_time,
+
+    COALESCE(
+        MAX(CASE WHEN is_clock_out = 1 THEN end_time END),
+        ''
+    ) AS clock_out_time,
+
+    ROUND(
+        COALESCE(
+            SUM(
+                CASE
+                    WHEN end_time <> '1/1/2000 0:00'
+                    THEN (
+                        strftime('%s', '2000-01-01 ' ||
+                                 substr(end_time, instr(end_time,' ') + 1))
+                        -
+                        strftime('%s', '2000-01-01 ' ||
+                                 substr(start_time, instr(start_time,' ') + 1))
+                    ) / 3600.0
+                    ELSE 0
+                END
+            ),
+            0
+        ),
+        2
+    ) AS total_hours
+
+FROM test_dein111
+
+GROUP BY
+    date,
+    resource_id
+
+ORDER BY
+    resource_id,
+    date;
